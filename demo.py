@@ -78,16 +78,19 @@ if __name__ == '__main__':
     
     model=getArch(arch, 90)
     print('Loading snapshot.')
-    saved_state_dict = torch.load(snapshot_path)
+    # saved_state_dict = torch.load(snapshot_path)
+    saved_state_dict = torch.load(snapshot_path, map_location=torch.device('cpu'))
     model.load_state_dict(saved_state_dict)
-    model.cuda(gpu)
+    # model.cuda(gpu)
     model.eval()
 
 
     softmax = nn.Softmax(dim=1)
-    detector = RetinaFace(gpu_id=0)
+    # detector = RetinaFace(gpu_id=0)
+    detector = RetinaFace(gpu_id=-1)
     idx_tensor = [idx for idx in range(90)]
-    idx_tensor = torch.FloatTensor(idx_tensor).cuda(gpu)
+    # idx_tensor = torch.FloatTensor(idx_tensor).cuda(gpu)
+    idx_tensor = torch.FloatTensor(idx_tensor)
     x=0
   
     cap = cv2.VideoCapture(cam)
@@ -129,7 +132,8 @@ if __name__ == '__main__':
                     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
                     im_pil = Image.fromarray(img)
                     img=transformations(im_pil)
-                    img  = Variable(img).cuda(gpu)
+                    # img  = Variable(img).cuda(gpu)
+                    img  = Variable(img)
                     img  = img.unsqueeze(0) 
                     
                     # gaze prediction
