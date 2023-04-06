@@ -149,14 +149,14 @@ if __name__ == '__main__':
                     pitch_predicted = softmax(gaze_pitch)
                     yaw_predicted = softmax(gaze_yaw)
 
-                    print(f'yaw predicted: {yaw_predicted}')
-                    
+                                       
                     # Get continuous predictions in degrees.
                     pitch_predicted = torch.sum(pitch_predicted.data[0] * idx_tensor) * 4 - 180
                     yaw_predicted = torch.sum(yaw_predicted.data[0] * idx_tensor) * 4 - 180
 
-                    print(f'yaw predicted: {yaw_predicted}')
-                    
+                    print(f'Yaw predicted in degrees: {yaw_predicted}, Pitch predicted in degrees: {pitch_predicted}')
+
+                                        
                     pitch_predicted= pitch_predicted.cpu().detach().numpy()* np.pi/180.0
                     yaw_predicted= yaw_predicted.cpu().detach().numpy()* np.pi/180.0
 
@@ -167,7 +167,7 @@ if __name__ == '__main__':
                     draw_gaze(x_min,y_min,bbox_width, bbox_height,frame,(pitch_predicted,yaw_predicted),color=(0,0,255))
                     cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (0,255,0), 1)
 
-                    print(f'yaw predicted: {yaw_predicted}')
+                    
             
             
             cv2.imwrite('./movies/frames/output/' + 'out_' + f, frame)
