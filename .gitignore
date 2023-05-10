@@ -4,3 +4,4 @@ output/
 models/
 .l2cs/
 movies/
+*.pyc
