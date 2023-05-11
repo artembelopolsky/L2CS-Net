@@ -3,5 +3,5 @@ evaluation/
 output/
 models/
 .l2cs/
-# movies/
+movies/
 *.pyc
