@@ -1,3 +1,5 @@
+# %%
+
 import argparse
 import numpy as np
 import cv2
@@ -18,10 +20,11 @@ from face_detection import RetinaFace
 from model import L2CS
 
 import os
-
+import csv
+# %%
 
 # To run: python demo_jpg.py --snapshot models/L2CSNet_gaze360.pkl --gpu 0
-
+# %%
 def parse_args():
     """Parse input arguments."""
     parser = argparse.ArgumentParser(
@@ -60,14 +63,23 @@ def getArch(arch,bins):
     return model
 
 if __name__ == '__main__':
-    args = parse_args()
-
-    cudnn.enabled = True
-    arch=args.arch
-    batch_size = 1
-    cam = args.cam_id
-    gpu = select_device(args.gpu_id, batch_size=batch_size)
-    snapshot_path = args.snapshot
+    
+    try:
+        args = parse_args()
+        cudnn.enabled = True
+        arch=args.arch
+        batch_size = 1
+        cam = args.cam_id
+        gpu = select_device(args.gpu_id, batch_size=batch_size)
+        snapshot_path = args.snapshot
+   
+    except:        
+        cudnn.enabled = True
+        arch='ResNet50'
+        batch_size = 1
+        cam = 0
+        gpu = select_device(0, batch_size=batch_size)
+        snapshot_path = 'models/L2CSNet_gaze360.pkl'
    
     
 
@@ -106,69 +118,102 @@ if __name__ == '__main__':
 
     print(fnames)
 
-    with torch.no_grad():
-        for f in fnames:
-            print(f'Reading file: {f}...')
-            frame = cv2.imread('./movies/frames/sample/' + f)
-            faces = detector(frame)
-            if faces is not None: 
-                for box, landmarks, score in faces:
-                    if score < .95:
-                        continue
-                    x_min=int(box[0])
-                    if x_min < 0:
-                        x_min = 0
-                    y_min=int(box[1])
-                    if y_min < 0:
-                        y_min = 0
-                    x_max=int(box[2])
-                    y_max=int(box[3])
-                    bbox_width = x_max - x_min
-                    bbox_height = y_max - y_min
-                    # x_min = max(0,x_min-int(0.2*bbox_height))
-                    # y_min = max(0,y_min-int(0.2*bbox_width))
-                    # x_max = x_max+int(0.2*bbox_height)
-                    # y_max = y_max+int(0.2*bbox_width)
-                    # bbox_width = x_max - x_min
-                    # bbox_height = y_max - y_min
+    # open output file for writing   
+    with open('./movies/frames/output_csv/out_' + fnames[0].split('.')[0] + '.csv', 'w', newline='') as outf:
+        # create the csv writer
+        writer = csv.writer(outf)
+        header = ['frame', 'yaw', 'pitch', 'bbox_area']
+        writer.writerow(header)
 
-                    # Crop image
-                    img = frame[y_min:y_max, x_min:x_max]
-                    img = cv2.resize(img, (224, 224))
-                    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-                    im_pil = Image.fromarray(img)
-                    img=transformations(im_pil)
-                    # img  = Variable(img).cuda(gpu)
-                    img  = Variable(img)
-                    img  = img.unsqueeze(0) 
-                    
-                    # gaze prediction
-                    gaze_pitch, gaze_yaw = model(img)
-                    
-                    
-                    pitch_predicted = softmax(gaze_pitch)
-                    yaw_predicted = softmax(gaze_yaw)
+        # get gaze    
+        with torch.no_grad():
+            for f in fnames:           
+            
+                # used to sort face bboxes
+                bbox_param = []
 
-                                       
-                    # Get continuous predictions in degrees.
-                    pitch_predicted = torch.sum(pitch_predicted.data[0] * idx_tensor) * 4 - 180
-                    yaw_predicted = torch.sum(yaw_predicted.data[0] * idx_tensor) * 4 - 180
+                print(f'Reading file: {f}...')
+                frame = cv2.imread('./movies/frames/sample/' + f)
+                faces = detector(frame)
+                if faces is not None: 
+                    # find all bboxes
+                    for box, landmarks, score in faces:
+                        if score < .95:
+                            continue
+                        x_min=int(box[0])
+                        if x_min < 0:
+                            x_min = 0
+                        y_min=int(box[1])
+                        if y_min < 0:
+                            y_min = 0
+                        x_max=int(box[2])
+                        y_max=int(box[3])
+                        bbox_width = x_max - x_min
+                        bbox_height = y_max - y_min
+                        bbox_area = bbox_width * bbox_height
+                        # x_min = max(0,x_min-int(0.2*bbox_height))
+                        # y_min = max(0,y_min-int(0.2*bbox_width))
+                        # x_max = x_max+int(0.2*bbox_height)
+                        # y_max = y_max+int(0.2*bbox_width)
+                        # bbox_width = x_max - x_min
+                        # bbox_height = y_max - y_min
 
-                    print(f'Yaw predicted in degrees: {yaw_predicted}, Pitch predicted in degrees: {pitch_predicted}')
+                        # collect all bbox parameters for future sorting
+                        bbox_param.append([bbox_area, x_min, x_max, y_min, y_max])
+
+                    # get three largest bounding boxes
+                    bbox_param  = np.array(bbox_param)
+                    bbox_param = bbox_param[bbox_param[:, 0].argsort()][::-1] # sort based bbox_area in descending order
+                    bbox_param = bbox_param[:1] # select subset largest bboxes
+
+                    # find predictions for each box
+                    for bbox_area, x_min, x_max, y_min, y_max in bbox_param:
+
+
+                        # Crop image
+                        img = frame[y_min:y_max, x_min:x_max]
+                        img = cv2.resize(img, (224, 224))
+                        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                        im_pil = Image.fromarray(img)
+                        img=transformations(im_pil)
+                        # img  = Variable(img).cuda(gpu)
+                        img  = Variable(img)
+                        img  = img.unsqueeze(0) 
+                        
+                        # gaze prediction
+                        gaze_pitch, gaze_yaw = model(img)
+                        
+                        
+                        pitch_predicted = softmax(gaze_pitch)
+                        yaw_predicted = softmax(gaze_yaw)
 
                                         
-                    pitch_predicted= pitch_predicted.cpu().detach().numpy()* np.pi/180.0
-                    yaw_predicted= yaw_predicted.cpu().detach().numpy()* np.pi/180.0
+                        # Get continuous predictions in degrees.
+                        pitch_predicted_deg = torch.sum(pitch_predicted.data[0] * idx_tensor) * 4 - 180
+                        yaw_predicted_deg = torch.sum(yaw_predicted.data[0] * idx_tensor) * 4 - 180
 
-                    
+                        # convert to numpy                        
+                        pitch_predicted_deg = pitch_predicted_deg.cpu().detach().numpy()
+                        yaw_predicted_deg = yaw_predicted_deg.cpu().detach().numpy()
 
+                        # flip yaw and pitch, they seem to be the other way around when looking at output
+                        temp_pitch = pitch_predicted_deg
+                        pitch_predicted_deg = yaw_predicted_deg
+                        yaw_predicted_deg = temp_pitch
+                        
+                        # write frame predictions to file
+                        row = [f, yaw_predicted_deg, pitch_predicted_deg, bbox_area]
+                        print(f'Yaw predicted in degrees: {yaw_predicted_deg}, Pitch predicted in degrees: {pitch_predicted_deg}, Bbox_area: {bbox_area}')
+                        writer.writerow(row)
+                                            
+                        pitch_predicted= pitch_predicted_deg * np.pi/180.0
+                        yaw_predicted= yaw_predicted_deg * np.pi/180.0
+                        
+                        draw_gaze(x_min,y_min,bbox_width, bbox_height,frame,(yaw_predicted,pitch_predicted),color=(0,0,255))
+                        cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (0,255,0), 1)
                 
-                    
-                    draw_gaze(x_min,y_min,bbox_width, bbox_height,frame,(pitch_predicted,yaw_predicted),color=(0,0,255))
-                    cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (0,255,0), 1)
-
-                    
+                cv2.imwrite('./movies/frames/output/' + 'out_' + f, frame)
+        
             
-            
-            cv2.imwrite('./movies/frames/output/' + 'out_' + f, frame)
 
+# %%
