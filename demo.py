@@ -144,14 +144,14 @@ if __name__ == '__main__':
                     yaw_predicted = softmax(gaze_yaw)
                     
                     # Get continuous predictions in degrees.
-                    pitch_predicted = torch.sum(pitch_predicted.data[0] * idx_tensor) * 4 - 180
-                    yaw_predicted = torch.sum(yaw_predicted.data[0] * idx_tensor) * 4 - 180
+                    pitch_predicted_deg = torch.sum(pitch_predicted.data[0] * idx_tensor) * 4 - 180
+                    yaw_predicted_deg = torch.sum(yaw_predicted.data[0] * idx_tensor) * 4 - 180
 
-                    print(f'Yaw predicted in degrees: {yaw_predicted}, Pitch predicted in degrees: {pitch_predicted}')
+                    print(f'Yaw predicted in degrees: {yaw_predicted_deg}, Pitch predicted in degrees: {pitch_predicted_deg}')
                     cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (0,255,0), 1)
                     
-                    pitch_predicted= pitch_predicted.cpu().detach().numpy()* np.pi/180.0
-                    yaw_predicted= yaw_predicted.cpu().detach().numpy()* np.pi/180.0
+                    pitch_predicted= pitch_predicted_deg.cpu().detach().numpy()* np.pi/180.0
+                    yaw_predicted= yaw_predicted_deg.cpu().detach().numpy()* np.pi/180.0
 
                 
                     
@@ -160,6 +160,8 @@ if __name__ == '__main__':
                     cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (0,255,0), 1)
             myFPS = 1.0 / (time.time() - start_fps)
             cv2.putText(frame, 'FPS: {:.1f}'.format(myFPS), (10, 20),cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (0, 255, 0), 1, cv2.LINE_AA)
+            cv2.putText(frame, 'YAW: {:.1f}'.format(yaw_predicted_deg), (10, 40),cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (0, 255, 0), 1, cv2.LINE_AA)
+            cv2.putText(frame, 'PITCH: {:.1f}'.format(pitch_predicted_deg), (10, 60),cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (0, 255, 0), 1, cv2.LINE_AA)
 
             cv2.imshow("Demo",frame)
             if cv2.waitKey(1) & 0xFF == 27:
