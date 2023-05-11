@@ -124,6 +124,7 @@ if __name__ == '__main__':
         writer = csv.writer(outf)
         header = ['frame', 'yaw', 'pitch', 'bbox_area']
         writer.writerow(header)
+
         # get gaze    
         with torch.no_grad():
             for f in fnames:           
@@ -135,6 +136,7 @@ if __name__ == '__main__':
                 frame = cv2.imread('./movies/frames/sample/' + f)
                 faces = detector(frame)
                 if faces is not None: 
+                    # find all bboxes
                     for box, landmarks, score in faces:
                         if score < .95:
                             continue
@@ -162,8 +164,9 @@ if __name__ == '__main__':
                     # get three largest bounding boxes
                     bbox_param  = np.array(bbox_param)
                     bbox_param = bbox_param[bbox_param[:, 0].argsort()][::-1] # sort based bbox_area in descending order
-                    bbox_param = bbox_param[:3] # select subset largest bboxes
+                    bbox_param = bbox_param[:1] # select subset largest bboxes
 
+                    # find predictions for each box
                     for bbox_area, x_min, x_max, y_min, y_max in bbox_param:
 
 
@@ -189,10 +192,16 @@ if __name__ == '__main__':
                         pitch_predicted_deg = torch.sum(pitch_predicted.data[0] * idx_tensor) * 4 - 180
                         yaw_predicted_deg = torch.sum(yaw_predicted.data[0] * idx_tensor) * 4 - 180
 
-                        # convert to numpy
+                        # convert to numpy                        
                         pitch_predicted_deg = pitch_predicted_deg.cpu().detach().numpy()
                         yaw_predicted_deg = yaw_predicted_deg.cpu().detach().numpy()
 
+                        # flip yaw and pitch, they seem to be the other way around when looking at output
+                        temp_pitch = pitch_predicted_deg
+                        pitch_predicted_deg = yaw_predicted_deg
+                        yaw_predicted_deg = temp_pitch
+                        
+                        # write frame predictions to file
                         row = [f, yaw_predicted_deg, pitch_predicted_deg, bbox_area]
                         print(f'Yaw predicted in degrees: {yaw_predicted_deg}, Pitch predicted in degrees: {pitch_predicted_deg}, Bbox_area: {bbox_area}')
                         writer.writerow(row)
@@ -200,11 +209,8 @@ if __name__ == '__main__':
                         pitch_predicted= pitch_predicted_deg * np.pi/180.0
                         yaw_predicted= yaw_predicted_deg * np.pi/180.0
                         
-                        draw_gaze(x_min,y_min,bbox_width, bbox_height,frame,(pitch_predicted,yaw_predicted),color=(0,0,255))
+                        draw_gaze(x_min,y_min,bbox_width, bbox_height,frame,(yaw_predicted,pitch_predicted),color=(0,0,255))
                         cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (0,255,0), 1)
-
-                        
-                
                 
                 cv2.imwrite('./movies/frames/output/' + 'out_' + f, frame)
         
