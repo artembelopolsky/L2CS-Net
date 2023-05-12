@@ -219,8 +219,7 @@ if __name__ == '__main__':
                         bbox_param = bbox_param[bbox_param[:, 0].argsort()][::-1] # sort based bbox_area in descending order
                         # bbox_param = bbox_param[:2] # select subset largest bboxes
                         
-                        if curr_bbox == 0:
-                            print('yes')
+                        if curr_bbox == 0:                            
                             selected_bbox_param = bbox_param[0] # select face (usually the first, largest)
                             selected_bbox = {'x1':selected_bbox_param[1], 'x2':selected_bbox_param[2],
                                             'y1':selected_bbox_param[3], 'y2':selected_bbox_param[4]}
@@ -229,10 +228,10 @@ if __name__ == '__main__':
                         for bbox_area, x_min, x_max, y_min, y_max in bbox_param:
 
                             curr_bbox = {'x1':x_min, 'x2':x_max, 'y1':y_min, 'y2':y_max}
-                            print(f'Selected bbox: {selected_bbox}, Current bbox: {curr_bbox}')
-                            
+                            # print(f'Selected bbox: {selected_bbox}, Current bbox: {curr_bbox}')                            
                             print(f'IOU is: {get_iou(curr_bbox, selected_bbox)}')
 
+                            # Set limit for proportion bbox overlap
                             if get_iou(curr_bbox, selected_bbox) < 0.5:
                                 print('No overlap')
                                 continue
