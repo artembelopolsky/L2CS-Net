@@ -165,7 +165,7 @@ if __name__ == '__main__':
                     if len(bbox_param) > 0:    
                         bbox_param  = np.array(bbox_param)
                         bbox_param = bbox_param[bbox_param[:, 0].argsort()][::-1] # sort based bbox_area in descending order
-                        bbox_param = bbox_param[:2] # select subset largest bboxes
+                        bbox_param = bbox_param[:3] # select subset largest bboxes
 
                         # find predictions for each box
                         for bbox_area, x_min, x_max, y_min, y_max in bbox_param:
