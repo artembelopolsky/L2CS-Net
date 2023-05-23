@@ -169,9 +169,11 @@ if __name__ == '__main__':
 
     print(fnames)
 
-    # Specify face bounding box to track
-    automatic_face_detection = False
+    # Specify face bounding box to track    
     face_to_track = [17628, 867, 980, 224, 380]
+    
+    # To start tracking set this to False
+    automatic_face_detection = True # if set to True, tracks the largest face from the first frame
 
     # open output file for writing   
     with open('./movies/frames/output_csv/out_' + fnames[0].split('.')[0] + '.csv', 'w', newline='') as outf:
