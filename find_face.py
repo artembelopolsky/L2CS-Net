@@ -1,5 +1,17 @@
 # %%
 
+### This script is run to find the bbox for the right face in the frame
+# 1. Finds all faces and orders them according to the area of bbox
+# 2. Selects N largest faces, default = 3 faces
+# 3. Draws the bboxes on the frames
+# 4. Writes bbox coordinates for all faces into file. 
+# 5. Using the files in 4. and 5. you can find the bbox coordinates for the right face
+# 6. You can enter these coordinates in demo_jpg to track the face of interest
+
+
+
+# %%
+
 import argparse
 import numpy as np
 import cv2
