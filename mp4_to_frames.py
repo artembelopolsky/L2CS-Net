@@ -5,7 +5,7 @@ import os
 
 folder = './movies'
 fname = 'XVlaarvsRomero2 2014.mp4' #krohnvssubasic2018.mp4' #NationsLeagueDepay2022.mp4'
-fname = 'CoadradovsPickford2018.mp4'#'RobbenvsNavas 2014.mp4'#'krohnvssubasic2018.mp4' #NationsLeagueDepay2022.mp4'
+# fname = 'CoadradovsPickford2018.mp4'#'RobbenvsNavas 2014.mp4'#'krohnvssubasic2018.mp4' #NationsLeagueDepay2022.mp4'
 path_to_file = os.path.join(folder, fname)
 # filename = './movies/penalty.mp4'
 vidcap = cv2.VideoCapture(path_to_file)
