@@ -192,6 +192,8 @@ if __name__ == '__main__':
                 
                 print(f'Reading file: {f}...')
                 frame = cv2.imread('./movies/frames/sample/' + f)
+                row = [f, '', ''] # dummy row in case there are no detections
+                
                 faces = detector(frame)
                 if faces is not None: 
                     # find all bboxes
@@ -282,16 +284,22 @@ if __name__ == '__main__':
                             # write frame predictions to file
                             row = [f, yaw_predicted_deg, pitch_predicted_deg, bbox_area]
                             print(f'Yaw predicted in degrees: {yaw_predicted_deg}, Pitch predicted in degrees: {pitch_predicted_deg}, Bbox_area: {bbox_area}')
-                            writer.writerow(row)
+                            # writer.writerow(row)
                                                 
                             pitch_predicted= pitch_predicted_deg * np.pi/180.0
                             yaw_predicted= yaw_predicted_deg * np.pi/180.0
                             
                             draw_gaze(x_min,y_min,bbox_width, bbox_height,frame,(yaw_predicted,pitch_predicted),color=(0,0,255))
                             cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (0,255,0), 1)
-                            
+                     
+                    
+                       
                 
+                    
+                writer.writerow(row) # write row for each frame either with gaze or empty
                 cv2.imwrite('./movies/frames/output/' + 'out_' + f, frame)
+                
+                
         
             
 
